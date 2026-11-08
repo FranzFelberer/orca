@@ -134,7 +134,7 @@ describe('scanAiVaultSessions with overlapping Pi and OMP roots', () => {
     // Workspace and Project skip the recency pass for cwd-bucket agents.
     {
       layout: 'the same folder for a scope-only workspace',
-      piRoot: sameFolder,
+      piRoot: (sessionsDir: string): string => sessionsDir,
       scope: { scopePaths: ['/repo/app'], scopeOnly: true }
     },
     {
