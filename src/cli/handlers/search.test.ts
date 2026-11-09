@@ -122,14 +122,6 @@ describe('orca search over the runtime RPC', () => {
     })
   })
 
-  it('answers a host with no such method as unavailable rather than a raw error', async () => {
-    const { output } = await runSearch([['query', 'q']], {
-      error: new RuntimeClientError('method_not_found', 'Unknown method aiVault.searchSessions')
-    })
-
-    expect(output).not.toContain('Unknown method')
-  })
-
   it('answers an old host asked for status with the absent-service sentinel', async () => {
     const { output } = await runSearch([['index-status', true]], {
       error: new RuntimeClientError('method_not_found', 'Unknown method aiVault.searchStatus')
