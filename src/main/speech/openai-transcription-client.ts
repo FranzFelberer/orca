@@ -1,8 +1,8 @@
 import { resampleToRate } from './stt-audio-resample'
 
+// Retired catalog ids are absent: settings load moves them to their replacement.
 export const OPENAI_TRANSCRIPTION_MODEL_BY_ID: Record<string, string> = {
-  'openai-gpt-4o-mini-transcribe': 'gpt-4o-mini-transcribe',
-  'openai-gpt-4o-transcribe': 'gpt-4o-transcribe'
+  'openai-gpt-transcribe': 'gpt-transcribe'
 }
 
 export const OPENAI_TRANSCRIPTION_URL = 'https://api.openai.com/v1/audio/transcriptions'
@@ -130,7 +130,8 @@ export class OpenAiTranscriptionSession {
     form.append('model', apiModel)
     form.append('response_format', 'json')
     if (this.language) {
-      form.append('language', this.language)
+      // gpt-transcribe takes a list of expected languages in place of the singular `language`.
+      form.append('languages[]', this.language)
     }
     // A named WAV blob satisfies multipart uploads without temporary files.
     form.append('file', new Blob([wav], { type: 'audio/wav' }), 'dictation.wav')
