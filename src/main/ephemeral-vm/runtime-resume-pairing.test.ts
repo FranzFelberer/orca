@@ -51,18 +51,12 @@ function connect(serverDataPath: string, desktopDataPath: string, environmentId:
 describe('resuming a recipe VM server', () => {
   let desktopDataPath: string
   let serverDataPath: string
-  const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
 
   beforeEach(() => {
-    // Why: store contents are under test; secure-file tests cover Windows ACLs.
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' })
     desktopDataPath = mkdtempSync(join(tmpdir(), 'orca-resume-desktop-'))
     serverDataPath = mkdtempSync(join(tmpdir(), 'orca-resume-server-'))
   })
   afterEach(async () => {
-    if (originalPlatform) {
-      Object.defineProperty(process, 'platform', originalPlatform)
-    }
     await Promise.all([removeTree(desktopDataPath), removeTree(serverDataPath)])
   })
 

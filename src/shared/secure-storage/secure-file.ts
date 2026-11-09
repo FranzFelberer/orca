@@ -32,8 +32,7 @@ import {
   type HardenedPathCacheEntry
 } from './secure-path-metadata-snapshot'
 
-// EPERM: Windows (and some FUSE mounts) open a directory but refuse to flush it.
-const UNSUPPORTED_DIRECTORY_FSYNC_CODES = new Set(['EINVAL', 'ENOTSUP', 'EOPNOTSUPP', 'EPERM'])
+const UNSUPPORTED_DIRECTORY_FSYNC_CODES = new Set(['EINVAL', 'ENOTSUP', 'EOPNOTSUPP'])
 
 // Why: read paths poll (~2/s, #4901); a metadata-keyed cache keeps an unchanged file from being re-verified and re-logged.
 let hardenedPathsThisProcess = new SecurePathHardeningCache<HardenedPathCacheEntry>(
@@ -180,17 +179,8 @@ function fsyncPathSync(path: string, flags: 'r' | 'r+'): void {
 }
 
 export function fsyncFileSync(path: string): void {
-  // FlushFileBuffers needs a write-capable handle on Windows; chosen without process.platform, which
-  // tests stub. A read-only POSIX file cannot open r+ but still fsyncs read-only.
-  try {
-    fsyncPathSync(path, 'r+')
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code
-    if (code !== 'EACCES' && code !== 'EPERM') {
-      throw error
-    }
-    fsyncPathSync(path, 'r')
-  }
+  // FlushFileBuffers requires a write-capable handle on Windows.
+  fsyncPathSync(path, process.platform === 'win32' ? 'r+' : 'r')
 }
 
 export function bestEffortFsyncDirectorySync(directory: string): void {

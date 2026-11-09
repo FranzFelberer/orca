@@ -1,7 +1,8 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { removeTree } from './windows-transient-lock-removal'
+import { afterEach, describe, expect, it } from 'vitest'
 import { encodePairingOffer } from './remote-runtime/pairing/pairing'
 import { PAIRING_OFFER_VERSION } from './remote-runtime/pairing/mobile-relay-pairing-offer'
 import {
@@ -50,20 +51,9 @@ function runtimeRecord(
 
 describe('ephemeral VM runtime store', () => {
   const tempDirs: string[] = []
-  const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
 
-  beforeEach(() => {
-    // Why: secure-file has dedicated ACL coverage; this suite focuses on store semantics.
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' })
-  })
-
-  afterEach(() => {
-    if (originalPlatform) {
-      Object.defineProperty(process, 'platform', originalPlatform)
-    }
-    for (const dir of tempDirs.splice(0)) {
-      rmSync(dir, { recursive: true, force: true })
-    }
+  afterEach(async () => {
+    await Promise.all(tempDirs.splice(0).map((dir) => removeTree(dir)))
   })
 
   function makeUserDataPath(): string {
