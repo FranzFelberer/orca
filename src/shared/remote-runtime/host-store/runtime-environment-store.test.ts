@@ -1,7 +1,7 @@
 import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { removeTree } from '../../windows-transient-lock-removal'
+import { removeTempDirs } from '../../testing/remove-temp-dirs.test-support'
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { encodePairingOffer } from '../pairing/pairing'
 import {
@@ -34,7 +34,7 @@ describe('runtime environment store', () => {
   const tempDirs: string[] = []
 
   afterEach(async () => {
-    await Promise.all(tempDirs.splice(0).map((dir) => removeTree(dir)))
+    await removeTempDirs(tempDirs.splice(0))
   })
 
   function writeProfileKeypair(userDataPath: string, fill: number): void {

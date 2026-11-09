@@ -3,7 +3,7 @@
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { removeTree } from '../../../shared/windows-transient-lock-removal'
+import { removeTempDirs } from '../../../shared/testing/remove-temp-dirs.test-support'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { encodePairingOffer } from '../../../shared/remote-runtime/pairing/pairing'
 import { PAIRING_OFFER_VERSION } from '../../../shared/remote-runtime/pairing/mobile-relay-pairing-offer'
@@ -107,7 +107,7 @@ describe('a request to a recipe VM environment', () => {
 
   afterEach(async () => {
     registerRecipeVmWaker(null)
-    await removeTree(userDataPath)
+    await removeTempDirs([userDataPath])
   })
 
   it.each(['suspended', 'resume_failed'] as const)(

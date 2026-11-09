@@ -1,7 +1,7 @@
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { removeTree } from '../../windows-transient-lock-removal'
+import { removeTempDirs } from '../../testing/remove-temp-dirs.test-support'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { encodePairingOffer } from '../pairing/pairing'
 import {
@@ -23,7 +23,7 @@ describe('pairing a server that is already saved', () => {
     userDataPath = mkdtempSync(join(tmpdir(), 'orca-runtime-env-same-server-'))
   })
   afterEach(async () => {
-    await removeTree(userDataPath)
+    await removeTempDirs([userDataPath])
   })
 
   it('refreshes the saved entry instead of saving the server twice under a new name', () => {

@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync, truncateSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { removeTree } from './windows-transient-lock-removal'
+import { removeTempDirs } from './testing/remove-temp-dirs.test-support'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   getEphemeralVmRuntimeFeatureStorePath,
@@ -91,7 +91,7 @@ describe('ephemeral VM runtime store rollback projection', () => {
   const tempDirs: string[] = []
 
   afterEach(async () => {
-    await Promise.all(tempDirs.splice(0).map((dir) => removeTree(dir)))
+    await removeTempDirs(tempDirs.splice(0))
   })
 
   function makeUserDataPath(): string {

@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { removeTree } from '../../shared/windows-transient-lock-removal'
+import { removeTempDirs } from '../../shared/testing/remove-temp-dirs.test-support'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { encodePairingOffer } from '../../shared/remote-runtime/pairing/pairing'
 import { PAIRING_OFFER_VERSION } from '../../shared/remote-runtime/pairing/mobile-relay-pairing-offer'
@@ -22,7 +22,7 @@ vi.mock('../workspace-hooks/hooks', () => ({
 
 const tempDirs: string[] = []
 afterEach(async () => {
-  await Promise.all(tempDirs.splice(0).map((root) => removeTree(root)))
+  await removeTempDirs(tempDirs.splice(0))
 })
 
 function makeDir(prefix: string): string {

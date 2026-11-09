@@ -1,7 +1,8 @@
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { removeTree, removeTreeSync } from '../../shared/windows-transient-lock-removal'
+import { removeTempDirs } from '../../shared/testing/remove-temp-dirs.test-support'
+import { removeTree } from '../../shared/windows-transient-lock-removal'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { encodePairingOffer } from '../../shared/remote-runtime/pairing/pairing'
 import type { PairedRuntimeConnection } from '../../shared/remote-runtime/pairing/paired-runtime-connection'
@@ -57,7 +58,7 @@ describe('resuming a recipe VM server', () => {
     serverDataPath = mkdtempSync(join(tmpdir(), 'orca-resume-server-'))
   })
   afterEach(async () => {
-    await Promise.all([removeTree(desktopDataPath), removeTree(serverDataPath)])
+    await removeTempDirs([desktopDataPath, serverDataPath])
   })
 
   function provision(): string {
@@ -136,7 +137,7 @@ describe('resuming a recipe VM server', () => {
   it('re-pairs from the fresh code when the host key changed, without asking the server', async () => {
     const environmentId = provision()
     const original = resolveEnvironmentPairingOffer(desktopDataPath, environmentId)
-    removeTreeSync(serverDataPath)
+    await removeTree(serverDataPath)
     serverDataPath = mkdtempSync(join(tmpdir(), 'orca-resume-server-'))
     const probeSavedPairing = vi.fn()
 
@@ -165,7 +166,7 @@ describe('resuming a recipe VM server', () => {
     ).publicKeyB64
     const original = resolveEnvironmentPairingOffer(desktopDataPath, environmentId)
     const before = listEnvironments(desktopDataPath)[0]!
-    removeTreeSync(serverDataPath)
+    await removeTree(serverDataPath)
     serverDataPath = mkdtempSync(join(tmpdir(), 'orca-resume-server-'))
     const invalidateTransport = vi.fn()
 
