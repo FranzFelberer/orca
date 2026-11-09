@@ -206,7 +206,7 @@ type Router = { holders: number; handle: RouterHandle }
 const routers = new WeakMap<QueryClient, Map<RpcClient, Router>>()
 
 // One router per world per host client, however many screens read that host.
-function retainHostEventRouter(
+export function retainHostEventRouter(
   queryClient: QueryClient,
   hostId: string,
   client: RpcClient
