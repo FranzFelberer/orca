@@ -119,7 +119,7 @@ export function getDefaultVoiceSettings(): VoiceSettings {
     sttModel: '',
     modelsDir: '',
     dictationLanguage: DICTATION_LANGUAGE_AUTO,
-    dictationMode: 'toggle' as const,
+    dictationMode: 'auto' as const,
     terminalConfirmBeforeInsert: false,
     userModels: [],
     openAiApiKeyConfigured: false,
