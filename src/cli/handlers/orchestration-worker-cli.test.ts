@@ -122,6 +122,28 @@ describe('orchestration worker-start CLI contract', () => {
     })
   })
 
+  it('accepts --terminal with --agent and sends both to the runtime', async () => {
+    const parsed = parseArgs([
+      'orchestration',
+      'worker-start',
+      '--spec',
+      'reuse',
+      '--terminal',
+      'term_worker',
+      '--agent',
+      'codex'
+    ])
+    expect(() => validateCommandAndFlags(ORCHESTRATION_WORKER_COMMAND_SPECS, parsed)).not.toThrow()
+    callMock.mockResolvedValue({
+      result: { taskId: 'task_1', dispatchId: 'ctx_1', state: 'ready', effects: [] }
+    })
+
+    await invokeWorkerStart(parsed.flags)
+
+    const start = callMock.mock.calls.find(([method]) => method === 'orchestration.workerStart')
+    expect(start?.[1]).toMatchObject({ terminal: 'term_worker', agent: 'codex' })
+  })
+
   it('keeps cleanup and retention TTL controls off the public CLI surface', async () => {
     const kept = parseArgs(['orchestration', 'worker-keep-open', '--dispatch', 'ctx_1'])
     expect(() => validateCommandAndFlags(ORCHESTRATION_WORKER_COMMAND_SPECS, kept)).not.toThrow()
