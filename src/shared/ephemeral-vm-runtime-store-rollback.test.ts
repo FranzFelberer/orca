@@ -1,4 +1,5 @@
-import { mkdtempSync, readFileSync, rmSync, truncateSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, truncateSync, writeFileSync } from 'node:fs'
+import { rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -89,9 +90,10 @@ function provisionedRootRecord(): EphemeralVmRuntimeRecord {
 describe('ephemeral VM runtime store rollback projection', () => {
   const tempDirs: string[] = []
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Async so Windows directory ACL work queued by secure writes can finish and release the folder.
     for (const dir of tempDirs.splice(0)) {
-      rmSync(dir, { recursive: true, force: true })
+      await rm(dir, { recursive: true, force: true, maxRetries: 8, retryDelay: 100 })
     }
   })
 

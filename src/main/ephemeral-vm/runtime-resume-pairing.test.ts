@@ -1,4 +1,5 @@
 import { mkdtempSync, rmSync } from 'node:fs'
+import { rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -50,20 +51,15 @@ function connect(serverDataPath: string, desktopDataPath: string, environmentId:
 describe('resuming a recipe VM server', () => {
   let desktopDataPath: string
   let serverDataPath: string
-  const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
 
   beforeEach(() => {
-    // Why: store contents are under test; secure-file tests cover Windows ACLs.
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' })
     desktopDataPath = mkdtempSync(join(tmpdir(), 'orca-resume-desktop-'))
     serverDataPath = mkdtempSync(join(tmpdir(), 'orca-resume-server-'))
   })
-  afterEach(() => {
-    if (originalPlatform) {
-      Object.defineProperty(process, 'platform', originalPlatform)
-    }
-    rmSync(desktopDataPath, { recursive: true, force: true })
-    rmSync(serverDataPath, { recursive: true, force: true })
+  afterEach(async () => {
+    // Async so Windows directory ACL work queued by secure writes can finish and release the folder.
+    await rm(desktopDataPath, { recursive: true, force: true, maxRetries: 8, retryDelay: 100 })
+    await rm(serverDataPath, { recursive: true, force: true, maxRetries: 8, retryDelay: 100 })
   })
 
   function provision(): string {
