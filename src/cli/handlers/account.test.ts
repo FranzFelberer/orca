@@ -602,16 +602,16 @@ describe('account CLI handlers', () => {
         _meta: { runtimeId: 'test-runtime' }
       })
 
-      await expect(ACCOUNT_HANDLERS['account add'](context(agent))).rejects.toThrow(
-        'The running Orca runtime is too old to add accounts from the CLI.'
-      )
+      await expect(ACCOUNT_HANDLERS['account add'](context(agent))).rejects.toMatchObject({
+        code: 'incompatible_runtime'
+      })
       expect(callMock).toHaveBeenCalledOnce()
       expect(callMock).toHaveBeenCalledWith('status.get')
       expect(spawnMock).not.toHaveBeenCalled()
     }
   )
 
-  it.each(['environment', 'pairing-code'])(
+  it.each(['server', 'pairing-code'])(
     'rejects --%s instead of silently ignoring it',
     async (flag) => {
       await expect(
@@ -627,7 +627,7 @@ describe('account CLI handlers', () => {
     }
   )
 
-  it.each(['environment', 'pairing-code'])(
+  it.each(['server', 'pairing-code'])(
     'rejects --%s on `account list` instead of listing the local host',
     async (flag) => {
       await expect(

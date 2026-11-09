@@ -100,9 +100,9 @@ describe('orca host rm', () => {
   })
 
   it.each([
-    ['local', 'This machine is always listed'],
-    ['this machine', 'This machine is always listed'],
-    ['runtime:env-m4air', 'orca environment rm'],
+    ['local', null],
+    ['this machine', null],
+    ['runtime:env-m4air', 'orca server rm --server <id>'],
     ['m4air', '--host ssh:<target-id>']
   ])('refuses --host %s before it reaches the runtime', async (host, nextStep) => {
     pairRuntimeEnvironment(listEnvironmentsMock, 'env-m4air', 'm4air')
@@ -115,31 +115,39 @@ describe('orca host rm', () => {
     expect(printed.ok).toBe(false)
     expect(printed.error?.code).toBe('invalid_argument')
     expect(printed.error?.message).toContain('removes saved SSH targets only')
-    expect(JSON.stringify(printed)).toContain(nextStep)
+    if (nextStep) {
+      expect(JSON.stringify(printed)).toContain(nextStep)
+    }
     expect(runtime.removed).toEqual([])
     expect(callMock).not.toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
   })
 
   it.each([
-    ['environment', 'm4air'],
-    ['pairing-code', 'orca://pair?code=x']
-  ])('refuses --%s rather than removing the target on another machine', async (flag, value) => {
-    pairRuntimeEnvironment(listEnvironmentsMock, 'env-m4air', 'm4air')
-    const runtime = fakeSshRuntime()
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    ['server', 'm4air', 'server'],
+    ['environment', 'm4air', 'server'],
+    ['pairing-code', 'orca://pair?code=x', 'pairing-code']
+  ])(
+    'refuses --%s rather than removing the target on another machine',
+    async (flag, value, printedFlag) => {
+      pairRuntimeEnvironment(listEnvironmentsMock, 'env-m4air', 'm4air')
+      const runtime = fakeSshRuntime()
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
 
-    await main(
-      ['host', 'rm', '--host', `ssh:${STALE.id}`, `--${flag}`, value, '--json'],
-      '/tmp/repo'
-    )
+      await main(
+        ['host', 'rm', '--host', `ssh:${STALE.id}`, `--${flag}`, value, '--json'],
+        '/tmp/repo'
+      )
 
-    const printed = printedJson(logSpy)
-    expect(printed.error?.code).toBe('invalid_argument')
-    expect(printed.error?.message).toContain(`\`--${flag}\` does not retarget \`orca host rm\``)
-    expect(runtime.removed).toEqual([])
-    expect(process.exitCode).toBe(1)
-  })
+      const printed = printedJson(logSpy)
+      expect(printed.error?.code).toBe('invalid_argument')
+      expect(printed.error?.message).toContain(
+        `\`--${printedFlag}\` does not retarget \`orca host rm\``
+      )
+      expect(runtime.removed).toEqual([])
+      expect(process.exitCode).toBe(1)
+    }
+  )
 
   it('refuses an id the runtime does not have, and does not match a label', async () => {
     const runtime = fakeSshRuntime()

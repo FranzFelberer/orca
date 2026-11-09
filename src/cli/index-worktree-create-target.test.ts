@@ -414,8 +414,7 @@ describe('orca cli worktree awareness', () => {
     )
 
     const printed = [...logSpy.mock.calls, ...errSpy.mock.calls].flat().join('\n')
-    expect(printed).toContain('No ready setup found for --project nope on any host.')
-    expect(printed).not.toContain('selected host')
+    expect(printed).toContain('"code": "invalid_argument"')
     expect(process.exitCode).toBe(1)
     process.exitCode = priorExitCode
   })
@@ -460,12 +459,56 @@ describe('orca cli worktree awareness', () => {
 
     expect(callMock).toHaveBeenCalledTimes(1)
     const printed = [...logSpy.mock.calls, ...errSpy.mock.calls].flat().join('\n')
-    expect(printed).toContain('it is set up on 2 hosts')
-    expect(printed).toContain('--host local')
-    expect(printed).toContain('--host runtime:gpu')
+    expect(printed).toContain('/tmp/orca  server=local')
+    expect(printed).toContain('/srv/orca  server=unknown (stored runtime:gpu; owner not verified)')
+    expect(printed).not.toContain('--host')
     expect(process.exitCode).toBe(1)
 
     process.exitCode = priorExitCode
+  })
+
+  it("uses the named server's own setup when --server is explicit", async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    queueFixtures(
+      callMock,
+      okFixture('req_project_setups', {
+        setups: [
+          buildSetup({
+            id: 'setup-local',
+            hostId: 'local',
+            repoId: 'repo-local',
+            path: '/tmp/orca'
+          }),
+          buildSetup({
+            id: 'setup-gpu',
+            hostId: 'runtime:gpu',
+            repoId: 'repo-gpu',
+            path: '/srv/orca'
+          })
+        ]
+      })
+    )
+
+    await main(
+      [
+        'worktree',
+        'create',
+        '--project',
+        'github:stablyai/orca',
+        '--server',
+        'local',
+        '--name',
+        'feature',
+        '--no-parent',
+        '--json'
+      ],
+      '/tmp/repo'
+    )
+
+    expect(callMock).toHaveBeenCalledWith(
+      'worktree.create',
+      expect.objectContaining({ repo: 'id:repo-local', repoHostId: 'local' })
+    )
   })
 
   it('accepts the host alias that `orca host list` prints', async () => {

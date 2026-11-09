@@ -344,7 +344,7 @@ describe('unknown command surfaces a suggestion', () => {
     ['orchestration worker-showw', 'orchestration worker-stop'],
     ['orchestration worker-relay', 'orchestration worker-release'],
     ['tab clues', 'tab close'],
-    ['environment rollbook', 'environment rollback'],
+    ['environment rollbook', 'server rollback'],
     ['linear relation move', 'linear relation remove']
   ])('keeps %s recovery away from %s before runtime lookup', async (input, forbidden) => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
@@ -441,20 +441,21 @@ describe('unknown command surfaces a suggestion', () => {
     logSpy.mockRestore()
   })
 
-  it.each(['environment', 'pairing-code'])(
-    'rejects --%s without a selector before runtime construction',
-    async (flag) => {
-      runtimeClientConstructorMock.mockClear()
+  it.each([
+    ['server', 'server'],
+    ['environment', 'server'],
+    ['pairing-code', 'pairing-code']
+  ])('rejects --%s without a selector before runtime construction', async (flag, printedFlag) => {
+    runtimeClientConstructorMock.mockClear()
 
-      await main([`--${flag}`, 'worktree', 'list'], '/tmp/repo')
+    await main([`--${flag}`, 'worktree', 'list'], '/tmp/repo')
 
-      expect(process.exitCode).toBe(1)
-      const stderr = errorSpy.mock.calls.map((call) => String(call[0])).join('\n')
-      expect(stderr).toContain(`Flag --${flag} requires a value.`)
-      expect(runtimeClientConstructorMock).not.toHaveBeenCalled()
-      expect(callMock).not.toHaveBeenCalled()
-    }
-  )
+    expect(process.exitCode).toBe(1)
+    const stderr = errorSpy.mock.calls.map((call) => String(call[0])).join('\n')
+    expect(stderr).toContain(`Flag --${printedFlag} requires a value.`)
+    expect(runtimeClientConstructorMock).not.toHaveBeenCalled()
+    expect(callMock).not.toHaveBeenCalled()
+  })
 })
 
 describe('unknown help command surfaces a suggestion', () => {

@@ -184,7 +184,7 @@ describe('omittedHostIds selector annotation', () => {
       'runtime:env-retired'
     ])
     expect(printed.result.hostScope.omittedHostSelectors).toEqual([
-      { hostId: 'runtime:env-paired', selector: '--environment m4air' },
+      { hostId: 'runtime:env-paired', selector: '--server env-paired' },
       { hostId: 'runtime:env-retired', selector: null }
     ])
   })
@@ -216,7 +216,7 @@ describe('omittedHostIds selector annotation', () => {
       const printed = JSON.parse(String(logSpy.mock.calls[0]?.[0]))
       expect(printed.result.hostScope.omittedHostSelectors).toEqual([
         { hostId: 'local', selector: null },
-        { hostId: 'runtime:env-paired', selector: '--environment m4air' },
+        { hostId: 'runtime:env-paired', selector: '--server env-paired' },
         { hostId: 'ssh:box-1', selector: null }
       ])
       const spec = COMMAND_SPECS.find(

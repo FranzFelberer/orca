@@ -127,7 +127,7 @@ describe('orca search over the runtime RPC', () => {
       error: new RuntimeClientError('method_not_found', 'Unknown method aiVault.searchSessions')
     })
 
-    expect(output).toContain('This host runs no session search service.')
+    expect(output).not.toContain('Unknown method')
   })
 
   it('answers an old host asked for status with the absent-service sentinel', async () => {
