@@ -1,3 +1,4 @@
+import { getMainHttpClient } from '../network/http-client'
 import { resampleToRate } from './stt-audio-resample'
 
 export const OPENAI_TRANSCRIPTION_MODEL_BY_ID: Record<string, string> = {
@@ -149,7 +150,7 @@ export class OpenAiTranscriptionSession {
   }
 
   private async upload(form: FormData, signal: AbortSignal): Promise<string> {
-    const response = await fetch(OPENAI_TRANSCRIPTION_URL, {
+    const response = await getMainHttpClient().fetch(OPENAI_TRANSCRIPTION_URL, {
       method: 'POST',
       signal,
       headers: {
