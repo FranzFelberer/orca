@@ -53,6 +53,7 @@ import {
 } from './test-fixtures'
 import { pairRuntimeEnvironment, useWorktreeAwarenessEnvironment } from './index-test-harness'
 import { RuntimeRpcFailureError } from './runtime-client'
+import { PROJECT_HOST_SETUP_HOST_TARGET_RUNTIME_CAPABILITY } from '../shared/worktree-runtime-capabilities'
 
 function buildSetup(overrides: {
   id: string
@@ -508,6 +509,45 @@ describe('orca cli worktree awareness', () => {
     expect(callMock).toHaveBeenCalledWith(
       'worktree.create',
       expect.objectContaining({ repo: 'id:repo-local', repoHostId: 'local' })
+    )
+  })
+
+  it("updates the named server's own twin when a setup id repeats across servers", async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    queueFixtures(
+      callMock,
+      okFixture('req_setups', {
+        setups: [
+          buildSetup({ id: 'repo-1', hostId: 'ssh:box', repoId: 'repo-1' }),
+          buildSetup({ id: 'repo-1', hostId: 'local', repoId: 'repo-1' })
+        ]
+      }),
+      okFixture('req_status', {
+        capabilities: [PROJECT_HOST_SETUP_HOST_TARGET_RUNTIME_CAPABILITY]
+      }),
+      okFixture('req_update', {
+        result: { setup: buildSetup({ id: 'repo-1', hostId: 'local', repoId: 'repo-1' }) }
+      })
+    )
+
+    await main(
+      [
+        'project',
+        'setup-update',
+        '--setup',
+        'repo-1',
+        '--server',
+        'local',
+        '--display-name',
+        'A',
+        '--json'
+      ],
+      '/tmp/repo'
+    )
+
+    expect(callMock).toHaveBeenCalledWith(
+      'projectHostSetup.update',
+      expect.objectContaining({ setupId: 'repo-1', hostId: 'local' })
     )
   })
 
