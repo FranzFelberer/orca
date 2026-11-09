@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync, truncateSync, writeFileSync } from 'node:fs'
-import { rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { removeTree } from './windows-transient-lock-removal'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   getEphemeralVmRuntimeFeatureStorePath,
@@ -91,10 +91,7 @@ describe('ephemeral VM runtime store rollback projection', () => {
   const tempDirs: string[] = []
 
   afterEach(async () => {
-    // Async so Windows directory ACL work queued by secure writes can finish and release the folder.
-    for (const dir of tempDirs.splice(0)) {
-      await rm(dir, { recursive: true, force: true, maxRetries: 8, retryDelay: 100 })
-    }
+    await Promise.all(tempDirs.splice(0).map((dir) => removeTree(dir)))
   })
 
   function makeUserDataPath(): string {

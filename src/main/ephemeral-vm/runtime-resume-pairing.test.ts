@@ -1,7 +1,7 @@
-import { mkdtempSync, rmSync } from 'node:fs'
-import { rm } from 'node:fs/promises'
+import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { removeTree, removeTreeSync } from '../../shared/windows-transient-lock-removal'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { encodePairingOffer } from '../../shared/remote-runtime/pairing/pairing'
 import type { PairedRuntimeConnection } from '../../shared/remote-runtime/pairing/paired-runtime-connection'
@@ -51,15 +51,19 @@ function connect(serverDataPath: string, desktopDataPath: string, environmentId:
 describe('resuming a recipe VM server', () => {
   let desktopDataPath: string
   let serverDataPath: string
+  const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
 
   beforeEach(() => {
+    // Why: store contents are under test; secure-file tests cover Windows ACLs.
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' })
     desktopDataPath = mkdtempSync(join(tmpdir(), 'orca-resume-desktop-'))
     serverDataPath = mkdtempSync(join(tmpdir(), 'orca-resume-server-'))
   })
   afterEach(async () => {
-    // Async so Windows directory ACL work queued by secure writes can finish and release the folder.
-    await rm(desktopDataPath, { recursive: true, force: true, maxRetries: 8, retryDelay: 100 })
-    await rm(serverDataPath, { recursive: true, force: true, maxRetries: 8, retryDelay: 100 })
+    if (originalPlatform) {
+      Object.defineProperty(process, 'platform', originalPlatform)
+    }
+    await Promise.all([removeTree(desktopDataPath), removeTree(serverDataPath)])
   })
 
   function provision(): string {
@@ -138,7 +142,7 @@ describe('resuming a recipe VM server', () => {
   it('re-pairs from the fresh code when the host key changed, without asking the server', async () => {
     const environmentId = provision()
     const original = resolveEnvironmentPairingOffer(desktopDataPath, environmentId)
-    rmSync(serverDataPath, { recursive: true, force: true })
+    removeTreeSync(serverDataPath)
     serverDataPath = mkdtempSync(join(tmpdir(), 'orca-resume-server-'))
     const probeSavedPairing = vi.fn()
 
@@ -167,7 +171,7 @@ describe('resuming a recipe VM server', () => {
     ).publicKeyB64
     const original = resolveEnvironmentPairingOffer(desktopDataPath, environmentId)
     const before = listEnvironments(desktopDataPath)[0]!
-    rmSync(serverDataPath, { recursive: true, force: true })
+    removeTreeSync(serverDataPath)
     serverDataPath = mkdtempSync(join(tmpdir(), 'orca-resume-server-'))
     const invalidateTransport = vi.fn()
 

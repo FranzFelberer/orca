@@ -1,8 +1,8 @@
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
-import { rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { removeTree } from '../../shared/windows-transient-lock-removal'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { encodePairingOffer } from '../../shared/remote-runtime/pairing/pairing'
 import { PAIRING_OFFER_VERSION } from '../../shared/remote-runtime/pairing/mobile-relay-pairing-offer'
 import { getEphemeralVmRuntimeStorePath } from '../../shared/ephemeral-vm-runtime-store'
@@ -22,10 +22,7 @@ vi.mock('../workspace-hooks/hooks', () => ({
 
 const tempDirs: string[] = []
 afterEach(async () => {
-  // Async so Windows directory ACL work queued by secure writes can finish and release the folder.
-  for (const root of tempDirs.splice(0)) {
-    await rm(root, { recursive: true, force: true, maxRetries: 8, retryDelay: 100 })
-  }
+  await Promise.all(tempDirs.splice(0).map((root) => removeTree(root)))
 })
 
 function makeDir(prefix: string): string {
@@ -35,6 +32,17 @@ function makeDir(prefix: string): string {
 }
 
 describe('recipe timeoutSeconds and persisted runtimes', () => {
+  const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
+  beforeEach(() => {
+    // Isolate from platform ACL behavior, which secure-file tests cover.
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' })
+  })
+  afterEach(() => {
+    if (originalPlatform) {
+      Object.defineProperty(process, 'platform', originalPlatform)
+    }
+  })
+
   it('persists a runtime whose recipe sets timeoutSeconds in a shape older builds still read', async () => {
     const userDataPath = makeDir('orca-vm-timeouts-user-data-')
     const repoPath = makeDir('orca-vm-timeouts-repo-')

@@ -1,8 +1,8 @@
 import { existsSync, mkdtempSync, readFileSync, truncateSync, writeFileSync } from 'node:fs'
-import { rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { removeTree } from '../../shared/windows-transient-lock-removal'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { encodePairingOffer } from '../../shared/remote-runtime/pairing/pairing'
 import { PAIRING_OFFER_VERSION } from '../../shared/remote-runtime/pairing/mobile-relay-pairing-offer'
 import {
@@ -25,10 +25,7 @@ import type { OrcaVmRecipe } from '../../shared/orca-yaml-hook-types'
 const tempDirs: string[] = []
 
 afterEach(async () => {
-  // Async so Windows directory ACL work queued by secure writes can finish and release the folder.
-  for (const root of tempDirs.splice(0)) {
-    await rm(root, { recursive: true, force: true, maxRetries: 8, retryDelay: 100 })
-  }
+  await Promise.all(tempDirs.splice(0).map((root) => removeTree(root)))
 })
 
 function makeDir(prefix: string): string {
@@ -51,6 +48,19 @@ function nodeCommand(scriptPath: string): string {
 }
 
 describe('ephemeral VM runtime service', () => {
+  const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
+
+  beforeEach(() => {
+    // Isolate lifecycle tests from platform ACL behavior, which secure-file tests cover.
+    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' })
+  })
+
+  afterEach(() => {
+    if (originalPlatform) {
+      Object.defineProperty(process, 'platform', originalPlatform)
+    }
+  })
+
   it('persists a successful recipe-created runtime and cleans it up', async () => {
     const userDataPath = makeDir('orca-ephemeral-vm-service-user-data-')
     const repoPath = makeDir('orca-ephemeral-vm-service-repo-')

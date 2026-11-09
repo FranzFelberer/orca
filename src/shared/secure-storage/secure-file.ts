@@ -179,8 +179,17 @@ function fsyncPathSync(path: string, flags: 'r' | 'r+'): void {
 }
 
 export function fsyncFileSync(path: string): void {
-  // FlushFileBuffers requires a write-capable handle on Windows.
-  fsyncPathSync(path, process.platform === 'win32' ? 'r+' : 'r')
+  // FlushFileBuffers needs a write-capable handle on Windows; chosen without process.platform, which
+  // tests stub. A read-only POSIX file cannot open r+ but still fsyncs read-only.
+  try {
+    fsyncPathSync(path, 'r+')
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code
+    if (code !== 'EACCES' && code !== 'EPERM') {
+      throw error
+    }
+    fsyncPathSync(path, 'r')
+  }
 }
 
 export function bestEffortFsyncDirectorySync(directory: string): void {
