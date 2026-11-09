@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { removeTree } from '../../shared/windows-transient-lock-removal'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { encodePairingOffer } from '../../shared/remote-runtime/pairing/pairing'
 import { PAIRING_OFFER_VERSION } from '../../shared/remote-runtime/pairing/mobile-relay-pairing-offer'
 import { getEphemeralVmRuntimeStorePath } from '../../shared/ephemeral-vm-runtime-store'
@@ -32,17 +32,6 @@ function makeDir(prefix: string): string {
 }
 
 describe('recipe timeoutSeconds and persisted runtimes', () => {
-  const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
-  beforeEach(() => {
-    // Isolate from platform ACL behavior, which secure-file tests cover.
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' })
-  })
-  afterEach(() => {
-    if (originalPlatform) {
-      Object.defineProperty(process, 'platform', originalPlatform)
-    }
-  })
-
   it('persists a runtime whose recipe sets timeoutSeconds in a shape older builds still read', async () => {
     const userDataPath = makeDir('orca-vm-timeouts-user-data-')
     const repoPath = makeDir('orca-vm-timeouts-repo-')

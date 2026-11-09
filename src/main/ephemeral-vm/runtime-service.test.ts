@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, readFileSync, truncateSync, writeFileSync } fr
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { removeTree } from '../../shared/windows-transient-lock-removal'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { encodePairingOffer } from '../../shared/remote-runtime/pairing/pairing'
 import { PAIRING_OFFER_VERSION } from '../../shared/remote-runtime/pairing/mobile-relay-pairing-offer'
 import {
@@ -48,19 +48,6 @@ function nodeCommand(scriptPath: string): string {
 }
 
 describe('ephemeral VM runtime service', () => {
-  const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
-
-  beforeEach(() => {
-    // Isolate lifecycle tests from platform ACL behavior, which secure-file tests cover.
-    Object.defineProperty(process, 'platform', { configurable: true, value: 'linux' })
-  })
-
-  afterEach(() => {
-    if (originalPlatform) {
-      Object.defineProperty(process, 'platform', originalPlatform)
-    }
-  })
-
   it('persists a successful recipe-created runtime and cleans it up', async () => {
     const userDataPath = makeDir('orca-ephemeral-vm-service-user-data-')
     const repoPath = makeDir('orca-ephemeral-vm-service-repo-')

@@ -32,7 +32,8 @@ import {
   type HardenedPathCacheEntry
 } from './secure-path-metadata-snapshot'
 
-const UNSUPPORTED_DIRECTORY_FSYNC_CODES = new Set(['EINVAL', 'ENOTSUP', 'EOPNOTSUPP'])
+// EPERM: Windows (and some FUSE mounts) open a directory but refuse to flush it.
+const UNSUPPORTED_DIRECTORY_FSYNC_CODES = new Set(['EINVAL', 'ENOTSUP', 'EOPNOTSUPP', 'EPERM'])
 
 // Why: read paths poll (~2/s, #4901); a metadata-keyed cache keeps an unchanged file from being re-verified and re-logged.
 let hardenedPathsThisProcess = new SecurePathHardeningCache<HardenedPathCacheEntry>(
